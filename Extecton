@@ -1,0 +1,43 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local root = character:WaitForChild("HumanoidRootPart")
+local collecting = false
+local vim = game:GetService("VirtualInputManager")
+local runService = game:GetService("RunService")
+
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.F then
+        collecting = not collecting
+        print(collecting and "Collection ON" or "Collection OFF")
+    end
+end)
+
+runService.Heartbeat:Connect(function()
+    if not collecting then return end
+    if not character or not root then return end
+    
+    local nearestFossil = nil
+    local nearestDist = math.huge
+    
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name and string.lower(obj.Name):find("fossil") then
+            local dist = (obj.Position - root.Position).Magnitude
+            if dist < nearestDist then
+                nearestDist = dist
+                nearestFossil = obj
+            end
+        end
+    end
+    
+    if nearestFossil and nearestDist < 20 then
+        root.CFrame = CFrame.new(nearestFossil.Position)
+        task.wait(0.1)
+        if vim then
+            vim:SendKeyEvent(true, "E", false, game)
+            task.wait(0.1)
+            vim:SendKeyEvent(false, "E", false, game)
+        end
+    end
+end)
+
+print("Press F to toggle Auto Collect")
